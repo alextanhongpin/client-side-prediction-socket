@@ -53,10 +53,13 @@ export default class Client extends Game {
     this.socket = socket;
     this.entityId = socket.id;
     // Receive the state of all the entities.
-    this.socket.on("update", input => {
-      this.pendingChanges.push(input);
+    this.socket.on("update", messages => {
+      this.pendingChanges.push(...messages);
     });
     this.socket.on("deregister", clientId => this.deregister(clientId));
+    this.socket.on("handshake", serverFps => {
+      this.serverFps = serverFps ?? 20;
+    });
   }
 
   bindHandlers() {
@@ -92,7 +95,6 @@ export default class Client extends Game {
       if (this.entityId === entityId) {
         entity.x = x;
         entity.y = y;
-
         if (this.serverReconciliation) {
           this.pendingInputs = this.pendingInputs.filter(
             input => input.inputSequenceNumber > lastProcessedInput
@@ -147,7 +149,7 @@ export default class Client extends Game {
   }
 
   interpolateEntities() {
-    const renderTimestamp = Date.now() - 1000.0 / 10; // Server FPS.
+    const renderTimestamp = Date.now() - 1000.0 / this.serverFps; // Server FPS.
     for (let id in this.entities) {
       if (id === this.entityId) continue;
 

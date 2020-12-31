@@ -10,8 +10,7 @@ async function main() {
   const server = http.createServer(app);
   const io = new Socket(server);
 
-  // Simulate at 10 fps.
-  const srv = new Server(10);
+  const srv = new Server(20);
   srv.start();
   io.on("connection", socket => {
     srv.register(socket, io);

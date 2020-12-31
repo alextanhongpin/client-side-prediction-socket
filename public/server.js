@@ -2,10 +2,11 @@ import Entity from "./entity.js";
 import Game from "./game.js";
 
 export default class Server extends Game {
-  constructor(fps = 10) {
+  constructor(fps = 20) {
     super(fps);
 
     this.clients = {};
+
     // Maps the client id to the entity state.
     this.entities = {};
 
@@ -23,6 +24,7 @@ export default class Server extends Game {
 
     // Send once.
     this.sendWorldState();
+    this.io.emit("handshake", this.fps);
   }
 
   deregister(socket) {
@@ -52,16 +54,16 @@ export default class Server extends Game {
   sendWorldState() {
     const now = Date.now();
 
-    for (let entityId in this.entities) {
-      const entity = this.entities[entityId];
+    const messages = Object.values(this.entities).map(entity => {
+      const { id, x, y } = entity;
       const message = {
-        entityId,
-        lastProcessedInput: this.lastProcessedInputs[entityId],
-        x: entity.x,
-        y: entity.y,
-        timestamp: now
+        entityId: id,
+        x,
+        y,
+        lastProcessedInput: this.lastProcessedInputs[id]
       };
-      this.io.emit("update", message);
-    }
+      return message;
+    });
+    this.io.emit("update", messages);
   }
 }
